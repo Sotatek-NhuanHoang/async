@@ -1,7 +1,7 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-  typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (factory((global.async = global.async || {})));
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    (factory((global.async = global.async || {})));
 }(this, (function (exports) { 'use strict';
 
 function slice(arrayLike, start) {
@@ -74,36 +74,6 @@ var initialParams = function (fn) {
         fn.call(this, args, callback);
     };
 };
-
-/**
- * Checks if `value` is the
- * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
- * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an object, else `false`.
- * @example
- *
- * _.isObject({});
- * // => true
- *
- * _.isObject([1, 2, 3]);
- * // => true
- *
- * _.isObject(_.noop);
- * // => true
- *
- * _.isObject(null);
- * // => false
- */
-function isObject(value) {
-  var type = typeof value;
-  return value != null && (type == 'object' || type == 'function');
-}
 
 var hasSetImmediate = typeof setImmediate === 'function' && setImmediate;
 var hasNextTick = typeof process === 'object' && typeof process.nextTick === 'function';
@@ -198,7 +168,7 @@ function asyncify(func) {
             return callback(e);
         }
         // if result is Promise object
-        if (isObject(result) && typeof result.then === 'function') {
+        if (result && typeof result.then === 'function') {
             result.then(function(value) {
                 invokeCallback(callback, null, value);
             }, function(err) {
@@ -229,7 +199,15 @@ function isAsync(fn) {
 }
 
 function wrapAsync(asyncFn) {
-    return isAsync(asyncFn) ? asyncify(asyncFn) : asyncFn;
+    const wrapAsyncFn = function() {
+        try {
+            asyncFn.apply(null, arguments);
+        } catch (error) {
+            const callback = arguments[arguments.length - 1];
+            callback(error);
+        }
+    };
+    return isAsync(asyncFn) ? (0, _asyncify2.default)(wrapAsyncFn) : wrapAsyncFn;
 }
 
 function applyEach$1(eachfn) {
@@ -250,220 +228,18 @@ function applyEach$1(eachfn) {
     };
 }
 
-/** Detect free variable `global` from Node.js. */
-var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-
-/** Detect free variable `self`. */
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-/** Used as a reference to the global object. */
-var root = freeGlobal || freeSelf || Function('return this')();
-
-/** Built-in value references. */
-var Symbol$1 = root.Symbol;
-
-/** Used for built-in method references. */
-var objectProto = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-/**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-var nativeObjectToString = objectProto.toString;
-
-/** Built-in value references. */
-var symToStringTag$1 = Symbol$1 ? Symbol$1.toStringTag : undefined;
-
-/**
- * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
- *
- * @private
- * @param {*} value The value to query.
- * @returns {string} Returns the raw `toStringTag`.
- */
-function getRawTag(value) {
-  var isOwn = hasOwnProperty.call(value, symToStringTag$1),
-      tag = value[symToStringTag$1];
-
-  try {
-    value[symToStringTag$1] = undefined;
-    var unmasked = true;
-  } catch (e) {}
-
-  var result = nativeObjectToString.call(value);
-  if (unmasked) {
-    if (isOwn) {
-      value[symToStringTag$1] = tag;
-    } else {
-      delete value[symToStringTag$1];
-    }
-  }
-  return result;
-}
-
-/** Used for built-in method references. */
-var objectProto$1 = Object.prototype;
-
-/**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-var nativeObjectToString$1 = objectProto$1.toString;
-
-/**
- * Converts `value` to a string using `Object.prototype.toString`.
- *
- * @private
- * @param {*} value The value to convert.
- * @returns {string} Returns the converted string.
- */
-function objectToString(value) {
-  return nativeObjectToString$1.call(value);
-}
-
-/** `Object#toString` result references. */
-var nullTag = '[object Null]';
-var undefinedTag = '[object Undefined]';
-
-/** Built-in value references. */
-var symToStringTag = Symbol$1 ? Symbol$1.toStringTag : undefined;
-
-/**
- * The base implementation of `getTag` without fallbacks for buggy environments.
- *
- * @private
- * @param {*} value The value to query.
- * @returns {string} Returns the `toStringTag`.
- */
-function baseGetTag(value) {
-  if (value == null) {
-    return value === undefined ? undefinedTag : nullTag;
-  }
-  return (symToStringTag && symToStringTag in Object(value))
-    ? getRawTag(value)
-    : objectToString(value);
-}
-
-/** `Object#toString` result references. */
-var asyncTag = '[object AsyncFunction]';
-var funcTag = '[object Function]';
-var genTag = '[object GeneratorFunction]';
-var proxyTag = '[object Proxy]';
-
-/**
- * Checks if `value` is classified as a `Function` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a function, else `false`.
- * @example
- *
- * _.isFunction(_);
- * // => true
- *
- * _.isFunction(/abc/);
- * // => false
- */
-function isFunction(value) {
-  if (!isObject(value)) {
-    return false;
-  }
-  // The use of `Object#toString` avoids issues with the `typeof` operator
-  // in Safari 9 which returns 'object' for typed arrays and other constructors.
-  var tag = baseGetTag(value);
-  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
-}
-
-/** Used as references for various `Number` constants. */
-var MAX_SAFE_INTEGER = 9007199254740991;
-
-/**
- * Checks if `value` is a valid array-like length.
- *
- * **Note:** This method is loosely based on
- * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
- * @example
- *
- * _.isLength(3);
- * // => true
- *
- * _.isLength(Number.MIN_VALUE);
- * // => false
- *
- * _.isLength(Infinity);
- * // => false
- *
- * _.isLength('3');
- * // => false
- */
-function isLength(value) {
-  return typeof value == 'number' &&
-    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-}
-
-/**
- * Checks if `value` is array-like. A value is considered array-like if it's
- * not a function and has a `value.length` that's an integer greater than or
- * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
- * @example
- *
- * _.isArrayLike([1, 2, 3]);
- * // => true
- *
- * _.isArrayLike(document.body.children);
- * // => true
- *
- * _.isArrayLike('abc');
- * // => true
- *
- * _.isArrayLike(_.noop);
- * // => false
- */
 function isArrayLike(value) {
-  return value != null && isLength(value.length) && !isFunction(value);
+    return value &&
+        typeof value.length === 'number' &&
+        value.length >= 0 &&
+        value.length % 1 === 0;
 }
 
 // A temporary value used to identify if the loop should be broken.
 // See #1064, #1293
 var breakLoop = {};
 
-/**
- * This method returns `undefined`.
- *
- * @static
- * @memberOf _
- * @since 2.3.0
- * @category Util
- * @example
- *
- * _.times(2, _.noop);
- * // => [undefined, undefined]
- */
-function noop() {
-  // No operation performed.
-}
+function noop() {}
 
 function once(fn) {
     return function () {
@@ -479,449 +255,6 @@ var iteratorSymbol = typeof Symbol === 'function' && Symbol.iterator;
 var getIterator = function (coll) {
     return iteratorSymbol && coll[iteratorSymbol] && coll[iteratorSymbol]();
 };
-
-/**
- * The base implementation of `_.times` without support for iteratee shorthands
- * or max array length checks.
- *
- * @private
- * @param {number} n The number of times to invoke `iteratee`.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Array} Returns the array of results.
- */
-function baseTimes(n, iteratee) {
-  var index = -1,
-      result = Array(n);
-
-  while (++index < n) {
-    result[index] = iteratee(index);
-  }
-  return result;
-}
-
-/**
- * Checks if `value` is object-like. A value is object-like if it's not `null`
- * and has a `typeof` result of "object".
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
- * @example
- *
- * _.isObjectLike({});
- * // => true
- *
- * _.isObjectLike([1, 2, 3]);
- * // => true
- *
- * _.isObjectLike(_.noop);
- * // => false
- *
- * _.isObjectLike(null);
- * // => false
- */
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
-}
-
-/** `Object#toString` result references. */
-var argsTag = '[object Arguments]';
-
-/**
- * The base implementation of `_.isArguments`.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an `arguments` object,
- */
-function baseIsArguments(value) {
-  return isObjectLike(value) && baseGetTag(value) == argsTag;
-}
-
-/** Used for built-in method references. */
-var objectProto$3 = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty$2 = objectProto$3.hasOwnProperty;
-
-/** Built-in value references. */
-var propertyIsEnumerable = objectProto$3.propertyIsEnumerable;
-
-/**
- * Checks if `value` is likely an `arguments` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an `arguments` object,
- *  else `false`.
- * @example
- *
- * _.isArguments(function() { return arguments; }());
- * // => true
- *
- * _.isArguments([1, 2, 3]);
- * // => false
- */
-var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
-  return isObjectLike(value) && hasOwnProperty$2.call(value, 'callee') &&
-    !propertyIsEnumerable.call(value, 'callee');
-};
-
-/**
- * Checks if `value` is classified as an `Array` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an array, else `false`.
- * @example
- *
- * _.isArray([1, 2, 3]);
- * // => true
- *
- * _.isArray(document.body.children);
- * // => false
- *
- * _.isArray('abc');
- * // => false
- *
- * _.isArray(_.noop);
- * // => false
- */
-var isArray = Array.isArray;
-
-/**
- * This method returns `false`.
- *
- * @static
- * @memberOf _
- * @since 4.13.0
- * @category Util
- * @returns {boolean} Returns `false`.
- * @example
- *
- * _.times(2, _.stubFalse);
- * // => [false, false]
- */
-function stubFalse() {
-  return false;
-}
-
-/** Detect free variable `exports`. */
-var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
-
-/** Detect free variable `module`. */
-var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
-
-/** Detect the popular CommonJS extension `module.exports`. */
-var moduleExports = freeModule && freeModule.exports === freeExports;
-
-/** Built-in value references. */
-var Buffer = moduleExports ? root.Buffer : undefined;
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined;
-
-/**
- * Checks if `value` is a buffer.
- *
- * @static
- * @memberOf _
- * @since 4.3.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
- * @example
- *
- * _.isBuffer(new Buffer(2));
- * // => true
- *
- * _.isBuffer(new Uint8Array(2));
- * // => false
- */
-var isBuffer = nativeIsBuffer || stubFalse;
-
-/** Used as references for various `Number` constants. */
-var MAX_SAFE_INTEGER$1 = 9007199254740991;
-
-/** Used to detect unsigned integer values. */
-var reIsUint = /^(?:0|[1-9]\d*)$/;
-
-/**
- * Checks if `value` is a valid array-like index.
- *
- * @private
- * @param {*} value The value to check.
- * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
- * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
- */
-function isIndex(value, length) {
-  var type = typeof value;
-  length = length == null ? MAX_SAFE_INTEGER$1 : length;
-
-  return !!length &&
-    (type == 'number' ||
-      (type != 'symbol' && reIsUint.test(value))) &&
-        (value > -1 && value % 1 == 0 && value < length);
-}
-
-/** `Object#toString` result references. */
-var argsTag$1 = '[object Arguments]';
-var arrayTag = '[object Array]';
-var boolTag = '[object Boolean]';
-var dateTag = '[object Date]';
-var errorTag = '[object Error]';
-var funcTag$1 = '[object Function]';
-var mapTag = '[object Map]';
-var numberTag = '[object Number]';
-var objectTag = '[object Object]';
-var regexpTag = '[object RegExp]';
-var setTag = '[object Set]';
-var stringTag = '[object String]';
-var weakMapTag = '[object WeakMap]';
-
-var arrayBufferTag = '[object ArrayBuffer]';
-var dataViewTag = '[object DataView]';
-var float32Tag = '[object Float32Array]';
-var float64Tag = '[object Float64Array]';
-var int8Tag = '[object Int8Array]';
-var int16Tag = '[object Int16Array]';
-var int32Tag = '[object Int32Array]';
-var uint8Tag = '[object Uint8Array]';
-var uint8ClampedTag = '[object Uint8ClampedArray]';
-var uint16Tag = '[object Uint16Array]';
-var uint32Tag = '[object Uint32Array]';
-
-/** Used to identify `toStringTag` values of typed arrays. */
-var typedArrayTags = {};
-typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
-typedArrayTags[int8Tag] = typedArrayTags[int16Tag] =
-typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] =
-typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] =
-typedArrayTags[uint32Tag] = true;
-typedArrayTags[argsTag$1] = typedArrayTags[arrayTag] =
-typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] =
-typedArrayTags[dataViewTag] = typedArrayTags[dateTag] =
-typedArrayTags[errorTag] = typedArrayTags[funcTag$1] =
-typedArrayTags[mapTag] = typedArrayTags[numberTag] =
-typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
-typedArrayTags[setTag] = typedArrayTags[stringTag] =
-typedArrayTags[weakMapTag] = false;
-
-/**
- * The base implementation of `_.isTypedArray` without Node.js optimizations.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
- */
-function baseIsTypedArray(value) {
-  return isObjectLike(value) &&
-    isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
-}
-
-/**
- * The base implementation of `_.unary` without support for storing metadata.
- *
- * @private
- * @param {Function} func The function to cap arguments for.
- * @returns {Function} Returns the new capped function.
- */
-function baseUnary(func) {
-  return function(value) {
-    return func(value);
-  };
-}
-
-/** Detect free variable `exports`. */
-var freeExports$1 = typeof exports == 'object' && exports && !exports.nodeType && exports;
-
-/** Detect free variable `module`. */
-var freeModule$1 = freeExports$1 && typeof module == 'object' && module && !module.nodeType && module;
-
-/** Detect the popular CommonJS extension `module.exports`. */
-var moduleExports$1 = freeModule$1 && freeModule$1.exports === freeExports$1;
-
-/** Detect free variable `process` from Node.js. */
-var freeProcess = moduleExports$1 && freeGlobal.process;
-
-/** Used to access faster Node.js helpers. */
-var nodeUtil = (function() {
-  try {
-    // Use `util.types` for Node.js 10+.
-    var types = freeModule$1 && freeModule$1.require && freeModule$1.require('util').types;
-
-    if (types) {
-      return types;
-    }
-
-    // Legacy `process.binding('util')` for Node.js < 10.
-    return freeProcess && freeProcess.binding && freeProcess.binding('util');
-  } catch (e) {}
-}());
-
-/* Node.js helper references. */
-var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
-
-/**
- * Checks if `value` is classified as a typed array.
- *
- * @static
- * @memberOf _
- * @since 3.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
- * @example
- *
- * _.isTypedArray(new Uint8Array);
- * // => true
- *
- * _.isTypedArray([]);
- * // => false
- */
-var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
-
-/** Used for built-in method references. */
-var objectProto$2 = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty$1 = objectProto$2.hasOwnProperty;
-
-/**
- * Creates an array of the enumerable property names of the array-like `value`.
- *
- * @private
- * @param {*} value The value to query.
- * @param {boolean} inherited Specify returning inherited property names.
- * @returns {Array} Returns the array of property names.
- */
-function arrayLikeKeys(value, inherited) {
-  var isArr = isArray(value),
-      isArg = !isArr && isArguments(value),
-      isBuff = !isArr && !isArg && isBuffer(value),
-      isType = !isArr && !isArg && !isBuff && isTypedArray(value),
-      skipIndexes = isArr || isArg || isBuff || isType,
-      result = skipIndexes ? baseTimes(value.length, String) : [],
-      length = result.length;
-
-  for (var key in value) {
-    if ((inherited || hasOwnProperty$1.call(value, key)) &&
-        !(skipIndexes && (
-           // Safari 9 has enumerable `arguments.length` in strict mode.
-           key == 'length' ||
-           // Node.js 0.10 has enumerable non-index properties on buffers.
-           (isBuff && (key == 'offset' || key == 'parent')) ||
-           // PhantomJS 2 has enumerable non-index properties on typed arrays.
-           (isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset')) ||
-           // Skip index properties.
-           isIndex(key, length)
-        ))) {
-      result.push(key);
-    }
-  }
-  return result;
-}
-
-/** Used for built-in method references. */
-var objectProto$5 = Object.prototype;
-
-/**
- * Checks if `value` is likely a prototype object.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
- */
-function isPrototype(value) {
-  var Ctor = value && value.constructor,
-      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto$5;
-
-  return value === proto;
-}
-
-/**
- * Creates a unary function that invokes `func` with its argument transformed.
- *
- * @private
- * @param {Function} func The function to wrap.
- * @param {Function} transform The argument transform.
- * @returns {Function} Returns the new function.
- */
-function overArg(func, transform) {
-  return function(arg) {
-    return func(transform(arg));
-  };
-}
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeKeys = overArg(Object.keys, Object);
-
-/** Used for built-in method references. */
-var objectProto$4 = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty$3 = objectProto$4.hasOwnProperty;
-
-/**
- * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
- *
- * @private
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of property names.
- */
-function baseKeys(object) {
-  if (!isPrototype(object)) {
-    return nativeKeys(object);
-  }
-  var result = [];
-  for (var key in Object(object)) {
-    if (hasOwnProperty$3.call(object, key) && key != 'constructor') {
-      result.push(key);
-    }
-  }
-  return result;
-}
-
-/**
- * Creates an array of the own enumerable property names of `object`.
- *
- * **Note:** Non-object values are coerced to objects. See the
- * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
- * for more details.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Object
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of property names.
- * @example
- *
- * function Foo() {
- *   this.a = 1;
- *   this.b = 2;
- * }
- *
- * Foo.prototype.c = 3;
- *
- * _.keys(new Foo);
- * // => ['a', 'b'] (iteration order is not guaranteed)
- *
- * _.keys('hi');
- * // => ['0', '1']
- */
-function keys(object) {
-  return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
-}
 
 function createArrayIterator(coll) {
     var i = -1;
@@ -943,7 +276,7 @@ function createES2015Iterator(iterator) {
 }
 
 function createObjectIterator(obj) {
-    var okeys = keys(obj);
+    var okeys = obj ? Object.keys(obj) : [];
     var i = -1;
     var len = okeys.length;
     return function next() {
@@ -973,19 +306,28 @@ function onlyOnce(fn) {
 function _eachOfLimit(limit) {
     return function (obj, iteratee, callback) {
         callback = once(callback || noop);
-        if (limit <= 0 || !obj) {
+        if (limit <= 0) {
+            throw new RangeError('concurrency limit cannot be less than 1')
+        }
+        if (!obj) {
             return callback(null);
         }
         var nextElem = iterator(obj);
         var done = false;
+        var canceled = false;
         var running = 0;
         var looping = false;
 
         function iterateeCallback(err, value) {
+            if (canceled) return
             running -= 1;
             if (err) {
                 done = true;
                 callback(err);
+            }
+            else if (err === false) {
+                done = true;
+                canceled = true;
             }
             else if (value === breakLoop || (done && running <= 0)) {
                 done = true;
@@ -1052,12 +394,17 @@ function eachOfArrayLike(coll, iteratee, callback) {
     callback = once(callback || noop);
     var index = 0,
         completed = 0,
-        length = coll.length;
+        length = coll.length,
+        canceled = false;
     if (length === 0) {
         callback(null);
     }
 
     function iteratorCallback(err, value) {
+        if (err === false) {
+            canceled = true;
+        }
+        if (canceled === true) return
         if (err) {
             callback(err);
         } else if ((++completed === length) || value === breakLoop) {
@@ -1282,145 +629,13 @@ var mapSeries = doLimit(mapLimit, 1);
  */
 var applyEachSeries = applyEach$1(mapSeries);
 
-/**
- * A specialized version of `_.forEach` for arrays without support for
- * iteratee shorthands.
- *
- * @private
- * @param {Array} [array] The array to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Array} Returns `array`.
- */
-function arrayEach(array, iteratee) {
-  var index = -1,
-      length = array == null ? 0 : array.length;
-
-  while (++index < length) {
-    if (iteratee(array[index], index, array) === false) {
-      break;
+function forOwn(object, callback) {
+    if (!object) {
+        return;
     }
-  }
-  return array;
-}
-
-/**
- * Creates a base function for methods like `_.forIn` and `_.forOwn`.
- *
- * @private
- * @param {boolean} [fromRight] Specify iterating from right to left.
- * @returns {Function} Returns the new base function.
- */
-function createBaseFor(fromRight) {
-  return function(object, iteratee, keysFunc) {
-    var index = -1,
-        iterable = Object(object),
-        props = keysFunc(object),
-        length = props.length;
-
-    while (length--) {
-      var key = props[fromRight ? length : ++index];
-      if (iteratee(iterable[key], key, iterable) === false) {
-        break;
-      }
-    }
-    return object;
-  };
-}
-
-/**
- * The base implementation of `baseForOwn` which iterates over `object`
- * properties returned by `keysFunc` and invokes `iteratee` for each property.
- * Iteratee functions may exit iteration early by explicitly returning `false`.
- *
- * @private
- * @param {Object} object The object to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @param {Function} keysFunc The function to get the keys of `object`.
- * @returns {Object} Returns `object`.
- */
-var baseFor = createBaseFor();
-
-/**
- * The base implementation of `_.forOwn` without support for iteratee shorthands.
- *
- * @private
- * @param {Object} object The object to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Object} Returns `object`.
- */
-function baseForOwn(object, iteratee) {
-  return object && baseFor(object, iteratee, keys);
-}
-
-/**
- * The base implementation of `_.findIndex` and `_.findLastIndex` without
- * support for iteratee shorthands.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {Function} predicate The function invoked per iteration.
- * @param {number} fromIndex The index to search from.
- * @param {boolean} [fromRight] Specify iterating from right to left.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function baseFindIndex(array, predicate, fromIndex, fromRight) {
-  var length = array.length,
-      index = fromIndex + (fromRight ? 1 : -1);
-
-  while ((fromRight ? index-- : ++index < length)) {
-    if (predicate(array[index], index, array)) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-/**
- * The base implementation of `_.isNaN` without support for number objects.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
- */
-function baseIsNaN(value) {
-  return value !== value;
-}
-
-/**
- * A specialized version of `_.indexOf` which performs strict equality
- * comparisons of values, i.e. `===`.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {*} value The value to search for.
- * @param {number} fromIndex The index to search from.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function strictIndexOf(array, value, fromIndex) {
-  var index = fromIndex - 1,
-      length = array.length;
-
-  while (++index < length) {
-    if (array[index] === value) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-/**
- * The base implementation of `_.indexOf` without `fromIndex` bounds checks.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {*} value The value to search for.
- * @param {number} fromIndex The index to search from.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function baseIndexOf(array, value, fromIndex) {
-  return value === value
-    ? strictIndexOf(array, value, fromIndex)
-    : baseFindIndex(array, baseIsNaN, fromIndex);
+    Object.keys(object).forEach(function (key) {
+        callback(object[key], key);
+    });
 }
 
 /**
@@ -1509,8 +724,7 @@ var auto = function (tasks, concurrency, callback) {
         concurrency = null;
     }
     callback = once(callback || noop);
-    var keys$$1 = keys(tasks);
-    var numTasks = keys$$1.length;
+    var numTasks = Object.keys(tasks).length;
     if (!numTasks) {
         return callback(null);
     }
@@ -1520,6 +734,7 @@ var auto = function (tasks, concurrency, callback) {
 
     var results = {};
     var runningTasks = 0;
+    var canceled = false;
     var hasError = false;
 
     var listeners = Object.create(null);
@@ -1531,8 +746,8 @@ var auto = function (tasks, concurrency, callback) {
     // without the possibility of returning to an ancestor task
     var uncheckedDependencies = {};
 
-    baseForOwn(tasks, function (task, key) {
-        if (!isArray(task)) {
+    forOwn(tasks, function (task, key) {
+        if (!Array.isArray(task)) {
             // no dependencies
             enqueueTask(key, [task]);
             readyToCheck.push(key);
@@ -1548,7 +763,7 @@ var auto = function (tasks, concurrency, callback) {
         }
         uncheckedDependencies[key] = remainingDependencies;
 
-        arrayEach(dependencies, function (dependencyName) {
+        dependencies.forEach(function (dependencyName) {
             if (!tasks[dependencyName]) {
                 throw new Error('async.auto task `' + key +
                     '` has a non-existent dependency `' +
@@ -1574,6 +789,7 @@ var auto = function (tasks, concurrency, callback) {
     }
 
     function processQueue() {
+        if (canceled) return
         if (readyTasks.length === 0 && runningTasks === 0) {
             return callback(null, results);
         }
@@ -1595,7 +811,7 @@ var auto = function (tasks, concurrency, callback) {
 
     function taskComplete(taskName) {
         var taskListeners = listeners[taskName] || [];
-        arrayEach(taskListeners, function (fn) {
+        taskListeners.forEach(function (fn) {
             fn();
         });
         processQueue();
@@ -1607,18 +823,22 @@ var auto = function (tasks, concurrency, callback) {
 
         var taskCallback = onlyOnce(function(err, result) {
             runningTasks--;
+            if (err === false) {
+                canceled = true;
+                return
+            }
             if (arguments.length > 2) {
                 result = slice(arguments, 1);
             }
             if (err) {
                 var safeResults = {};
-                baseForOwn(results, function(val, rkey) {
+                forOwn(results, function(val, rkey) {
                     safeResults[rkey] = val;
                 });
                 safeResults[key] = result;
                 hasError = true;
                 listeners = Object.create(null);
-
+                if (canceled) return
                 callback(err, safeResults);
             } else {
                 results[key] = result;
@@ -1644,7 +864,7 @@ var auto = function (tasks, concurrency, callback) {
         while (readyToCheck.length) {
             currentTask = readyToCheck.pop();
             counter++;
-            arrayEach(getDependents(currentTask), function (dependent) {
+            getDependents(currentTask).forEach(function (dependent) {
                 if (--uncheckedDependencies[dependent] === 0) {
                     readyToCheck.push(dependent);
                 }
@@ -1660,322 +880,14 @@ var auto = function (tasks, concurrency, callback) {
 
     function getDependents(taskName) {
         var result = [];
-        baseForOwn(tasks, function (task, key) {
-            if (isArray(task) && baseIndexOf(task, taskName, 0) >= 0) {
+        forOwn(tasks, function (task, key) {
+            if (Array.isArray(task) && task.indexOf(taskName) >= 0) {
                 result.push(key);
             }
         });
         return result;
     }
 };
-
-/**
- * A specialized version of `_.map` for arrays without support for iteratee
- * shorthands.
- *
- * @private
- * @param {Array} [array] The array to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Array} Returns the new mapped array.
- */
-function arrayMap(array, iteratee) {
-  var index = -1,
-      length = array == null ? 0 : array.length,
-      result = Array(length);
-
-  while (++index < length) {
-    result[index] = iteratee(array[index], index, array);
-  }
-  return result;
-}
-
-/** `Object#toString` result references. */
-var symbolTag = '[object Symbol]';
-
-/**
- * Checks if `value` is classified as a `Symbol` primitive or object.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
- * @example
- *
- * _.isSymbol(Symbol.iterator);
- * // => true
- *
- * _.isSymbol('abc');
- * // => false
- */
-function isSymbol(value) {
-  return typeof value == 'symbol' ||
-    (isObjectLike(value) && baseGetTag(value) == symbolTag);
-}
-
-/** Used as references for various `Number` constants. */
-var INFINITY = 1 / 0;
-
-/** Used to convert symbols to primitives and strings. */
-var symbolProto = Symbol$1 ? Symbol$1.prototype : undefined;
-var symbolToString = symbolProto ? symbolProto.toString : undefined;
-
-/**
- * The base implementation of `_.toString` which doesn't convert nullish
- * values to empty strings.
- *
- * @private
- * @param {*} value The value to process.
- * @returns {string} Returns the string.
- */
-function baseToString(value) {
-  // Exit early for strings to avoid a performance hit in some environments.
-  if (typeof value == 'string') {
-    return value;
-  }
-  if (isArray(value)) {
-    // Recursively convert values (susceptible to call stack limits).
-    return arrayMap(value, baseToString) + '';
-  }
-  if (isSymbol(value)) {
-    return symbolToString ? symbolToString.call(value) : '';
-  }
-  var result = (value + '');
-  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-/**
- * The base implementation of `_.slice` without an iteratee call guard.
- *
- * @private
- * @param {Array} array The array to slice.
- * @param {number} [start=0] The start position.
- * @param {number} [end=array.length] The end position.
- * @returns {Array} Returns the slice of `array`.
- */
-function baseSlice(array, start, end) {
-  var index = -1,
-      length = array.length;
-
-  if (start < 0) {
-    start = -start > length ? 0 : (length + start);
-  }
-  end = end > length ? length : end;
-  if (end < 0) {
-    end += length;
-  }
-  length = start > end ? 0 : ((end - start) >>> 0);
-  start >>>= 0;
-
-  var result = Array(length);
-  while (++index < length) {
-    result[index] = array[index + start];
-  }
-  return result;
-}
-
-/**
- * Casts `array` to a slice if it's needed.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {number} start The start position.
- * @param {number} [end=array.length] The end position.
- * @returns {Array} Returns the cast slice.
- */
-function castSlice(array, start, end) {
-  var length = array.length;
-  end = end === undefined ? length : end;
-  return (!start && end >= length) ? array : baseSlice(array, start, end);
-}
-
-/**
- * Used by `_.trim` and `_.trimEnd` to get the index of the last string symbol
- * that is not found in the character symbols.
- *
- * @private
- * @param {Array} strSymbols The string symbols to inspect.
- * @param {Array} chrSymbols The character symbols to find.
- * @returns {number} Returns the index of the last unmatched string symbol.
- */
-function charsEndIndex(strSymbols, chrSymbols) {
-  var index = strSymbols.length;
-
-  while (index-- && baseIndexOf(chrSymbols, strSymbols[index], 0) > -1) {}
-  return index;
-}
-
-/**
- * Used by `_.trim` and `_.trimStart` to get the index of the first string symbol
- * that is not found in the character symbols.
- *
- * @private
- * @param {Array} strSymbols The string symbols to inspect.
- * @param {Array} chrSymbols The character symbols to find.
- * @returns {number} Returns the index of the first unmatched string symbol.
- */
-function charsStartIndex(strSymbols, chrSymbols) {
-  var index = -1,
-      length = strSymbols.length;
-
-  while (++index < length && baseIndexOf(chrSymbols, strSymbols[index], 0) > -1) {}
-  return index;
-}
-
-/**
- * Converts an ASCII `string` to an array.
- *
- * @private
- * @param {string} string The string to convert.
- * @returns {Array} Returns the converted array.
- */
-function asciiToArray(string) {
-  return string.split('');
-}
-
-/** Used to compose unicode character classes. */
-var rsAstralRange = '\\ud800-\\udfff';
-var rsComboMarksRange = '\\u0300-\\u036f';
-var reComboHalfMarksRange = '\\ufe20-\\ufe2f';
-var rsComboSymbolsRange = '\\u20d0-\\u20ff';
-var rsComboRange = rsComboMarksRange + reComboHalfMarksRange + rsComboSymbolsRange;
-var rsVarRange = '\\ufe0e\\ufe0f';
-
-/** Used to compose unicode capture groups. */
-var rsZWJ = '\\u200d';
-
-/** Used to detect strings with [zero-width joiners or code points from the astral planes](http://eev.ee/blog/2015/09/12/dark-corners-of-unicode/). */
-var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange  + rsComboRange + rsVarRange + ']');
-
-/**
- * Checks if `string` contains Unicode symbols.
- *
- * @private
- * @param {string} string The string to inspect.
- * @returns {boolean} Returns `true` if a symbol is found, else `false`.
- */
-function hasUnicode(string) {
-  return reHasUnicode.test(string);
-}
-
-/** Used to compose unicode character classes. */
-var rsAstralRange$1 = '\\ud800-\\udfff';
-var rsComboMarksRange$1 = '\\u0300-\\u036f';
-var reComboHalfMarksRange$1 = '\\ufe20-\\ufe2f';
-var rsComboSymbolsRange$1 = '\\u20d0-\\u20ff';
-var rsComboRange$1 = rsComboMarksRange$1 + reComboHalfMarksRange$1 + rsComboSymbolsRange$1;
-var rsVarRange$1 = '\\ufe0e\\ufe0f';
-
-/** Used to compose unicode capture groups. */
-var rsAstral = '[' + rsAstralRange$1 + ']';
-var rsCombo = '[' + rsComboRange$1 + ']';
-var rsFitz = '\\ud83c[\\udffb-\\udfff]';
-var rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')';
-var rsNonAstral = '[^' + rsAstralRange$1 + ']';
-var rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}';
-var rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]';
-var rsZWJ$1 = '\\u200d';
-
-/** Used to compose unicode regexes. */
-var reOptMod = rsModifier + '?';
-var rsOptVar = '[' + rsVarRange$1 + ']?';
-var rsOptJoin = '(?:' + rsZWJ$1 + '(?:' + [rsNonAstral, rsRegional, rsSurrPair].join('|') + ')' + rsOptVar + reOptMod + ')*';
-var rsSeq = rsOptVar + reOptMod + rsOptJoin;
-var rsSymbol = '(?:' + [rsNonAstral + rsCombo + '?', rsCombo, rsRegional, rsSurrPair, rsAstral].join('|') + ')';
-
-/** Used to match [string symbols](https://mathiasbynens.be/notes/javascript-unicode). */
-var reUnicode = RegExp(rsFitz + '(?=' + rsFitz + ')|' + rsSymbol + rsSeq, 'g');
-
-/**
- * Converts a Unicode `string` to an array.
- *
- * @private
- * @param {string} string The string to convert.
- * @returns {Array} Returns the converted array.
- */
-function unicodeToArray(string) {
-  return string.match(reUnicode) || [];
-}
-
-/**
- * Converts `string` to an array.
- *
- * @private
- * @param {string} string The string to convert.
- * @returns {Array} Returns the converted array.
- */
-function stringToArray(string) {
-  return hasUnicode(string)
-    ? unicodeToArray(string)
-    : asciiToArray(string);
-}
-
-/**
- * Converts `value` to a string. An empty string is returned for `null`
- * and `undefined` values. The sign of `-0` is preserved.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to convert.
- * @returns {string} Returns the converted string.
- * @example
- *
- * _.toString(null);
- * // => ''
- *
- * _.toString(-0);
- * // => '-0'
- *
- * _.toString([1, 2, 3]);
- * // => '1,2,3'
- */
-function toString(value) {
-  return value == null ? '' : baseToString(value);
-}
-
-/** Used to match leading and trailing whitespace. */
-var reTrim = /^\s+|\s+$/g;
-
-/**
- * Removes leading and trailing whitespace or specified characters from `string`.
- *
- * @static
- * @memberOf _
- * @since 3.0.0
- * @category String
- * @param {string} [string=''] The string to trim.
- * @param {string} [chars=whitespace] The characters to trim.
- * @param- {Object} [guard] Enables use as an iteratee for methods like `_.map`.
- * @returns {string} Returns the trimmed string.
- * @example
- *
- * _.trim('  abc  ');
- * // => 'abc'
- *
- * _.trim('-_-abc-_-', '_-');
- * // => 'abc'
- *
- * _.map(['  foo  ', '  bar  '], _.trim);
- * // => ['foo', 'bar']
- */
-function trim(string, chars, guard) {
-  string = toString(string);
-  if (string && (guard || chars === undefined)) {
-    return string.replace(reTrim, '');
-  }
-  if (!string || !(chars = baseToString(chars))) {
-    return string;
-  }
-  var strSymbols = stringToArray(string),
-      chrSymbols = stringToArray(chars),
-      start = charsStartIndex(strSymbols, chrSymbols),
-      end = charsEndIndex(strSymbols, chrSymbols) + 1;
-
-  return castSlice(strSymbols, start, end).join('');
-}
 
 var FN_ARGS = /^(?:async\s+)?(function)?\s*[^\(]*\(\s*([^\)]*)\)/m;
 var FN_ARG_SPLIT = /,/;
@@ -1987,7 +899,7 @@ function parseParams(func) {
     func = func.match(FN_ARGS)[2].replace(' ', '');
     func = func ? func.split(FN_ARG_SPLIT) : [];
     func = func.map(function (arg){
-        return trim(arg.replace(FN_ARG, ''));
+        return arg.replace(FN_ARG, '').trim();
     });
     return func;
 }
@@ -2077,14 +989,14 @@ function parseParams(func) {
 function autoInject(tasks, callback) {
     var newTasks = {};
 
-    baseForOwn(tasks, function (taskFn, key) {
+    forOwn(tasks, function (taskFn, key) {
         var params;
         var fnIsAsync = isAsync(taskFn);
         var hasNoDeps =
             (!fnIsAsync && taskFn.length === 1) ||
             (fnIsAsync && taskFn.length === 0);
 
-        if (isArray(taskFn)) {
+        if (Array.isArray(taskFn)) {
             params = taskFn.slice(0, -1);
             taskFn = taskFn[taskFn.length - 1];
 
@@ -2105,7 +1017,7 @@ function autoInject(tasks, callback) {
         }
 
         function newTask(results, taskCb) {
-            var newArgs = arrayMap(params, function (name) {
+            var newArgs = params.map(function (name) {
                 return results[name];
             });
             newArgs.push(taskCb);
@@ -2209,7 +1121,7 @@ function queue(worker, concurrency, payload) {
         concurrency = 1;
     }
     else if(concurrency === 0) {
-        throw new Error('Concurrency must not be zero');
+        throw new RangeError('Concurrency must not be zero');
     }
 
     var _worker = wrapAsync(worker);
@@ -2222,7 +1134,7 @@ function queue(worker, concurrency, payload) {
             throw new Error('task callback must be a function');
         }
         q.started = true;
-        if (!isArray(data)) {
+        if (!Array.isArray(data)) {
             data = [data];
         }
         if (data.length === 0 && q.idle()) {
@@ -2261,7 +1173,7 @@ function queue(worker, concurrency, payload) {
             for (var i = 0, l = tasks.length; i < l; i++) {
                 var task = tasks[i];
 
-                var index = baseIndexOf(workersList, task, 0);
+                var index = workersList.indexOf(task);
                 if (index === 0) {
                     workersList.shift();
                 } else if (index > 0) {
@@ -2561,7 +1473,7 @@ function reduce(coll, memo, iteratee, callback) {
  * });
  */
 function seq(/*...functions*/) {
-    var _functions = arrayMap(arguments, wrapAsync);
+    var _functions = Array.prototype.map.call(arguments, wrapAsync);
     return function(/*...args*/) {
         var args = slice(arguments);
         var that = this;
@@ -2762,24 +1674,8 @@ var constant = function(/*...values*/) {
     };
 };
 
-/**
- * This method returns the first argument it receives.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Util
- * @param {*} value Any value.
- * @returns {*} Returns `value`.
- * @example
- *
- * var object = { 'a': 1 };
- *
- * console.log(_.identity(object) === object);
- * // => true
- */
 function identity(value) {
-  return value;
+    return value;
 }
 
 function _createTester(check, getResult) {
@@ -2907,7 +1803,7 @@ function consoleFunc(name) {
                         console.error(err);
                     }
                 } else if (console[name]) {
-                    arrayEach(args, function (x) {
+                    args.forEach(function (x) {
                         console[name](x);
                     });
                 }
@@ -2975,6 +1871,7 @@ function doDuring(fn, test, callback) {
 
     function next(err/*, ...args*/) {
         if (err) return callback(err);
+        if (err === false) return;
         var args = slice(arguments, 1);
         args.push(check);
         _test.apply(this, args);
@@ -2982,6 +1879,7 @@ function doDuring(fn, test, callback) {
 
     function check(err, truth) {
         if (err) return callback(err);
+        if (err === false) return;
         if (!truth) return callback(null);
         _fn(next);
     }
@@ -3017,6 +1915,7 @@ function doWhilst(iteratee, test, callback) {
     var _iteratee = wrapAsync(iteratee);
     var next = function(err/*, ...args*/) {
         if (err) return callback(err);
+        if (err === false) return;
         var args = slice(arguments, 1);
         if (test.apply(this, args)) return _iteratee(next);
         callback.apply(null, [null].concat(args));
@@ -3093,11 +1992,13 @@ function during(test, fn, callback) {
 
     function next(err) {
         if (err) return callback(err);
+        if (err === false) return;
         _test(check);
     }
 
     function check(err, truth) {
         if (err) return callback(err);
+        if (err === false) return;
         if (!truth) return callback(null);
         _fn(next);
     }
@@ -3348,17 +2249,10 @@ var everyLimit = doParallelLimit(_createTester(notId, notId));
  */
 var everySeries = doLimit(everyLimit, 1);
 
-/**
- * The base implementation of `_.property` without support for deep paths.
- *
- * @private
- * @param {string} key The key of the property to get.
- * @returns {Function} Returns the new accessor function.
- */
-function baseProperty(key) {
-  return function(object) {
-    return object == null ? undefined : object[key];
-  };
+function property(property) {
+    return function (object) {
+        return object[property];
+    }
 }
 
 function filterArray(eachfn, arr, iteratee, callback) {
@@ -3395,9 +2289,9 @@ function filterGeneric(eachfn, coll, iteratee, callback) {
         if (err) {
             callback(err);
         } else {
-            callback(null, arrayMap(results.sort(function (a, b) {
+            callback(null, results.sort(function (a, b) {
                 return a.index - b.index;
-            }), baseProperty('value')));
+            }).map(property('value')));
         }
     });
 }
@@ -3511,6 +2405,7 @@ function forever(fn, errback) {
 
     function next(err) {
         if (err) return done(err);
+        if (err === false) return;
         task(next);
     }
     next();
@@ -3766,6 +2661,9 @@ function has(obj, key) {
  * function results against, the callback is omitted from the hash and an
  * optional hash function can be used.
  *
+ * **Note: if the async function errs, the result will not be cached and
+ * subsequent calls will call the wrapped function.**
+ *
  * If no hash function is specified, the first argument is used as a hash key,
  * which may work reasonably if it is a string or a data type that converts to a
  * distinct string. Note that objects and arrays will not behave reasonably.
@@ -3815,7 +2713,11 @@ function memoize(fn, hasher) {
             queues[key] = [callback];
             _fn.apply(null, args.concat(function(/*args*/) {
                 var args = slice(arguments);
-                memo[key] = args;
+                var err = args[0];
+                // #1465 don't memoize if an error occurred
+                if (!err) {
+                    memo[key] = args;
+                }
                 var q = queues[key];
                 delete queues[key];
                 for (var i = 0, l = q.length; i < l; i++) {
@@ -4072,6 +2974,11 @@ function parallelLimit$1(tasks, limit, callback) {
  *     console.log('all items have been processed');
  * };
  *
+ * // assign an error callback
+ * q.error = function(err, task) {
+ *     console.error('task experienced an error');
+ * };
+ *
  * // add some items to the queue
  * q.push({name: 'foo'}, function(err) {
  *     console.log('finished processing foo');
@@ -4131,7 +3038,7 @@ var priorityQueue = function(worker, concurrency) {
             throw new Error('task callback must be a function');
         }
         q.started = true;
-        if (!isArray(data)) {
+        if (!Array.isArray(data)) {
             data = [data];
         }
         if (data.length === 0) {
@@ -4207,7 +3114,7 @@ var priorityQueue = function(worker, concurrency) {
  */
 function race(tasks, callback) {
     callback = once(callback || noop);
-    if (!isArray(tasks)) return callback(new TypeError('First argument to race must be an array of functions'));
+    if (!Array.isArray(tasks)) return callback(new TypeError('First argument to race must be an array of functions'));
     if (!tasks.length) return callback();
     for (var i = 0, l = tasks.length; i < l; i++) {
         wrapAsync(tasks[i])(callback);
@@ -4370,11 +3277,11 @@ function reflect(fn) {
  */
 function reflectAll(tasks) {
     var results;
-    if (isArray(tasks)) {
-        results = arrayMap(tasks, reflect);
+    if (Array.isArray(tasks)) {
+        results = tasks.map(reflect);
     } else {
         results = {};
-        baseForOwn(tasks, function(task, key) {
+        forOwn(tasks, function(task, key) {
             results[key] = reflect.call(this, task);
         });
     }
@@ -4458,29 +3365,10 @@ var rejectLimit = doParallelLimit(reject$1);
  */
 var rejectSeries = doLimit(rejectLimit, 1);
 
-/**
- * Creates a function that returns `value`.
- *
- * @static
- * @memberOf _
- * @since 2.4.0
- * @category Util
- * @param {*} value The value to return from the new function.
- * @returns {Function} Returns the new constant function.
- * @example
- *
- * var objects = _.times(2, _.constant({ 'a': 1 }));
- *
- * console.log(objects);
- * // => [{ 'a': 1 }, { 'a': 1 }]
- *
- * console.log(objects[0] === objects[1]);
- * // => true
- */
 function constant$1(value) {
-  return function() {
-    return value;
-  };
+    return function () {
+        return value;
+    }
 }
 
 /**
@@ -4609,6 +3497,7 @@ function retry(opts, task, callback) {
     var attempt = 1;
     function retryAttempt() {
         _task(function(err) {
+            if (err === false) return
             if (err && attempt++ < options.times &&
                 (typeof options.errorFilter != 'function' ||
                     options.errorFilter(err))) {
@@ -4868,7 +3757,7 @@ function sortBy (coll, iteratee, callback) {
         });
     }, function (err, results) {
         if (err) return callback(err);
-        callback(null, arrayMap(results.sort(comparator), baseProperty('value')));
+        callback(null, results.sort(comparator).map(property('value')));
     });
 
     function comparator(left, right) {
@@ -4949,31 +3838,12 @@ function timeout(asyncFn, milliseconds, info) {
     });
 }
 
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeCeil = Math.ceil;
-var nativeMax = Math.max;
-
-/**
- * The base implementation of `_.range` and `_.rangeRight` which doesn't
- * coerce arguments.
- *
- * @private
- * @param {number} start The start of the range.
- * @param {number} end The end of the range.
- * @param {number} step The value to increment or decrement by.
- * @param {boolean} [fromRight] Specify iterating from right to left.
- * @returns {Array} Returns the range of numbers.
- */
-function baseRange(start, end, step, fromRight) {
-  var index = -1,
-      length = nativeMax(nativeCeil((end - start) / (step || 1)), 0),
-      result = Array(length);
-
-  while (length--) {
-    result[fromRight ? length : ++index] = start;
-    start += step;
-  }
-  return result;
+function range(size) {
+    var result = Array(size);
+    while (size--) {
+        result[size] = size;
+    }
+    return result;
 }
 
 /**
@@ -4994,7 +3864,7 @@ function baseRange(start, end, step, fromRight) {
  */
 function timeLimit(count, limit, iteratee, callback) {
     var _iteratee = wrapAsync(iteratee);
-    mapLimit(baseRange(0, count, 1), limit, _iteratee, callback);
+    mapLimit(range(count), limit, _iteratee, callback);
 }
 
 /**
@@ -5093,7 +3963,7 @@ function transform (coll, accumulator, iteratee, callback) {
     if (arguments.length <= 3) {
         callback = iteratee;
         iteratee = accumulator;
-        accumulator = isArray(coll) ? [] : {};
+        accumulator = Array.isArray(coll) ? [] : {};
     }
     callback = once(callback || noop);
     var _iteratee = wrapAsync(iteratee);
@@ -5154,7 +4024,7 @@ function tryEach(tasks, callback) {
                 result = res;
             }
             error = err;
-            callback(!err);
+            callback(err ? null : {});
         });
     }, function () {
         callback(error, result);
@@ -5220,6 +4090,7 @@ function whilst(test, iteratee, callback) {
     if (!test()) return callback(null);
     var next = function(err/*, ...args*/) {
         if (err) return callback(err);
+        if (err === false) return;
         if (test()) return _iteratee(next);
         var args = slice(arguments, 1);
         callback.apply(null, [null].concat(args));
@@ -5314,7 +4185,7 @@ function until(test, iteratee, callback) {
  */
 var waterfall = function(tasks, callback) {
     callback = once(callback || noop);
-    if (!isArray(tasks)) return callback(new Error('First argument to waterfall must be an array of functions'));
+    if (!Array.isArray(tasks)) return callback(new Error('First argument to waterfall must be an array of functions'));
     if (!tasks.length) return callback();
     var taskIndex = 0;
 
@@ -5325,6 +4196,7 @@ var waterfall = function(tasks, callback) {
     }
 
     function next(err/*, ...args*/) {
+        if (err === false) return
         if (err || taskIndex === tasks.length) {
             return callback.apply(null, arguments);
         }
