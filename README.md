@@ -1,56 +1,42 @@
-![Async Logo](https://raw.githubusercontent.com/caolan/async/master/logo/async-logo_readme.jpg)
+# Another async package
+#### The purpose: Catching any errors insight task and call last callback
+For Documentation, visit https://caolan.github.io/async/
 
-[![Build Status via Travis CI](https://travis-ci.org/caolan/async.svg?branch=master)](https://travis-ci.org/caolan/async)
-[![NPM version](https://img.shields.io/npm/v/async.svg)](https://www.npmjs.com/package/async)
-[![Coverage Status](https://coveralls.io/repos/caolan/async/badge.svg?branch=master)](https://coveralls.io/r/caolan/async?branch=master)
-[![Join the chat at https://gitter.im/caolan/async](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/caolan/async?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![libhive - Open source examples](https://www.libhive.com/providers/npm/packages/async/examples/badge.svg)](https://www.libhive.com/providers/npm/packages/async)
-[![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/async/badge?style=rounded)](https://www.jsdelivr.com/package/npm/async)
-
-
-Async is a utility module which provides straight-forward, powerful functions for working with [asynchronous JavaScript](http://caolan.github.io/async/global.html). Although originally designed for use with [Node.js](https://nodejs.org/) and installable via `npm install --save async`, it can also be used directly in the browser.
-
-This version of the package is optimized for the Node.js environment. If you use Async with webpack, install [`async-es`](https://www.npmjs.com/package/async-es) instead.
-
-For Documentation, visit <https://caolan.github.io/async/>
-
-*For Async v1.5.x documentation, go [HERE](https://github.com/caolan/async/blob/v1.5.2/README.md)*
-
-
+##### Example:
 ```javascript
-// for use with Node-style callbacks...
-var async = require("async");
+async.auto({
+    get_data: function(callback) {
+        console.log(UndefinedVariables) // This line will throw an exception
 
-var obj = {dev: "/dev.json", test: "/test.json", prod: "/prod.json"};
-var configs = {};
-
-async.forEachOf(obj, (value, key, callback) => {
-    fs.readFile(__dirname + value, "utf8", (err, data) => {
-        if (err) return callback(err);
-        try {
-            configs[key] = JSON.parse(data);
-        } catch (e) {
-            return callback(e);
-        }
-        callback();
-    });
-}, err => {
-    if (err) console.error(err.message);
-    // configs is now a map of JSON data
-    doSomethingWith(configs);
+        callback(null, 'data', 'converted to array');
+    },
+    make_folder: function(callback) {
+        callback(null, 'folder');
+    },
+    write_file: ['get_data', 'make_folder', function(results, callback) {
+        callback(null, 'filename');
+    }],
+    email_link: ['write_file', function(results, callback) {
+        callback(null, {'file':results.write_file, 'email':'user@example.com'});
+    }]
+}, function(err, results) {
+    console.log('err = ', err);
+    console.log('results = ', results);
 });
 ```
-
+##### Result:
 ```javascript
-var async = require("async");
+err =  ReferenceError: UndefinedVariables is not defined
+    at get_data (/home/nn/workspace/async-catch-error/index.js:6:21)
+    at params (/home/nn/workspace/async-catch-error/node_modules/async/internal/wrapAsync.js:24:13)
+    at runTask (/home/nn/workspace/async-catch-error/node_modules/async/auto.js:131:13)
+    at /home/nn/workspace/async-catch-error/node_modules/async/auto.js:71:13
+    at processQueue (/home/nn/workspace/async-catch-error/node_modules/async/auto.js:81:13)
+    at Object.exports.default [as auto] (/home/nn/workspace/async-catch-error/node_modules/async/auto.js:67:5)
+    at Object.<anonymous> (/home/nn/workspace/async-catch-error/index.js:4:7)
+    at Module._compile (module.js:652:30)
+    at Object.Module._extensions..js (module.js:663:10)
+    at Module.load (module.js:565:32)
+results = undefined
 
-// ...or ES2017 async functions
-async.mapLimit(urls, 5, async function(url) {
-    const response = await fetch(url)
-    return response.body
-}, (err, results) => {
-    if (err) throw err
-    // results is now an array of the response bodies
-    console.log(results)
-})
 ```

@@ -1,16 +1,16 @@
 {
-  "name": "async",
+  "name": "nhua-async",
   "description": "Higher-order functions and common patterns for asynchronous code",
   "version": "2.6.1",
   "main": "dist/async.js",
-  "author": "Caolan McMahon",
-  "homepage": "https://caolan.github.io/async/",
+  "author": "Caolan McMahon and Mr. Nhua",
+  "homepage": "https://github.com/Sotatek-NhuanHoang/nhua-async",
   "repository": {
     "type": "git",
-    "url": "https://github.com/caolan/async.git"
+    "url": "https://github.com/Sotatek-NhuanHoang/nhua-async.git"
   },
   "bugs": {
-    "url": "https://github.com/caolan/async/issues"
+    "url": "https://github.com/Sotatek-NhuanHoang/nhua-async"
   },
   "keywords": [
     "async",
